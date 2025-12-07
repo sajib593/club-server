@@ -37,6 +37,7 @@ async function run() {
 
     let db = client.db('club')
     let usersCollection = db.collection('users')
+    let clubsCollection = db.collection('clubs')
 
     // users related api -------------------------- 
 
@@ -54,6 +55,21 @@ async function run() {
       }
 
       let result  = await usersCollection.insertOne(user)
+      res.send(result)
+    })
+
+
+
+
+
+    // createClubs+++++++++++++--------------- 
+    app.post('/clubs', async(req, res)=>{
+      let clubData = req.body;
+      clubData.status = "pending";
+      clubData.createdAt = new Date();
+      clubData.updatedAt = new Date();
+
+      let result = await clubsCollection.insertOne(clubData);
       res.send(result)
     })
 

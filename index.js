@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = "mongodb+srv://club:llrGAtLrl8ktqNFj@cluster0.vkkq9zu.mongodb.net/?appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -61,6 +61,7 @@ async function run() {
 
 
 
+    // clubs related api ----------------------- 
 
     // createClubs+++++++++++++--------------- 
     app.post('/clubs', async(req, res)=>{
@@ -72,6 +73,58 @@ async function run() {
       let result = await clubsCollection.insertOne(clubData);
       res.send(result)
     })
+
+    // ClubCards++++++++++++++++ 
+    app.get('/allClubs', async(req, res)=>{
+      let query = {status: "pending"} 
+      let cursor =  clubsCollection.find(query);
+      let result = await cursor.toArray();
+      res.send(result)
+    })
+
+
+
+
+
+
+    // AllAdminClubs++++++++++++++++ 
+        app.get('/allAdminClubs', async(req, res)=>{
+      let query = {} 
+      let cursor =  clubsCollection.find(query);
+      let result = await cursor.toArray();
+      res.send(result)
+    })
+
+
+
+    // AllAdminClubs++++++++++++++++ 
+     app.patch('/allAdminClubs/:id', async (req, res) => {
+            const status = req.body.status;
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    status: status,
+                    
+                }
+            }
+
+            const result = await clubsCollection.updateOne(query, updatedDoc);
+
+            if (status === 'approved') {
+                const email = req.body.email;
+                const userQuery = { email }
+                const updateUser = {
+                    $set: {
+                        role: 'clubManager'
+                    }
+                }
+                const userResult = await usersCollection.updateOne(userQuery, updateUser);
+            }
+
+            res.send(result);
+        })
+
 
 
 

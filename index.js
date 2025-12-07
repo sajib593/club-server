@@ -33,6 +33,32 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+
+    let db = client.db('club')
+    let usersCollection = db.collection('users')
+
+    // users related api -------------------------- 
+
+    // register++++++++++++++
+    app.post('/users', async(req, res)=>{
+      let user = req.body;
+      user.role = 'member';
+      user.createdAt = new Date();
+      let email = user.email;
+      let userExist = await usersCollection.findOne({email})
+
+      if(userExist){
+        return res.send({message: 'user exist'})
+
+      }
+
+      let result  = await usersCollection.insertOne(user)
+      res.send(result)
+    })
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

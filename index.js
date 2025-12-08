@@ -38,6 +38,7 @@ async function run() {
     let db = client.db('club')
     let usersCollection = db.collection('users')
     let clubsCollection = db.collection('clubs')
+    let memberShipCollection = db.collection('memberShip')
 
     // users related api -------------------------- 
 
@@ -63,7 +64,7 @@ async function run() {
 
     // clubs related api ----------------------- 
 
-    // createClubs+++++++++++++--------------- 
+    //  +++++++++++++--------------- 
     app.post('/clubs', async(req, res)=>{
       let clubData = req.body;
       clubData.status = "pending";
@@ -76,12 +77,98 @@ async function run() {
 
     // ClubCards++++++++++++++++ 
     app.get('/allClubs', async(req, res)=>{
-      let query = {status: "pending"} 
+      let query = {status: "approved"} 
       let cursor =  clubsCollection.find(query);
       let result = await cursor.toArray();
       res.send(result)
     })
 
+    // clubDetails++++++++++++++++++++++ 
+    app.get('/allClubs/:id', async(req, res)=>{
+      let id = req.params.id;
+      let query = {_id :new ObjectId(id)};
+      let result = await clubsCollection.findOne(query);
+      res.send(result)
+    })
+
+
+
+
+    // membership related api-------------------------- 
+
+    // clubDetails++++++++++++++++++++++
+app.post('/memberShip', async (req, res) => {
+    try {
+        const { userEmail, userName, clubId, membershipFee, joinedAt, expireAt } = req.body;
+
+        // Find user
+        const userData = await usersCollection.findOne({ email: userEmail });
+
+        if (!userData) {
+            return res.status(404).send({ message: "User not found", status: "no_user" });
+        }
+
+        const userId = userData._id;
+
+        // Check existing membership
+        const existingMembership = await memberShipCollection.findOne({
+            userId: userId,
+            clubId: clubId
+        });
+
+        if (existingMembership) {
+            return res.send({
+                message: "Already a member",
+                status: existingMembership.status,
+                membership: existingMembership
+            });
+        }
+
+        // Status logic
+        let status = membershipFee == 0 ? "active" : "pending_payment";
+
+        let membershipData = {
+            userId,
+            userEmail,
+            userName,
+            clubId,
+            membershipFee,
+            joinedAt,
+            expireAt,
+            status
+        };
+
+        let result = await memberShipCollection.insertOne(membershipData);
+
+        res.send({
+          insertedId: result.insertedId,
+          status,
+          membership: membershipData
+        })
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).send({ error: "Server error" });
+    }
+});
+
+
+
+ // clubDetails++++++++++++++++++++++
+app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
+    const { email, clubId } = req.params;
+
+    const user = await usersCollection.findOne({ email });
+
+    if (!user) return res.send(null);
+
+    const membership = await memberShipCollection.findOne({
+        userId: user._id,
+        clubId
+    });
+
+    res.send(membership);
+});
 
 
 

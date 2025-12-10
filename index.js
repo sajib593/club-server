@@ -360,6 +360,25 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
     })
 
 
+    // ShowAllEvents+++++++++++++++ 
+    app.get('/showAllEvents', async(req,res)=>{
+      let query = {};
+      let cursor = eventCollection.find(query);
+      let result = await cursor.toArray();
+      res.send(result)
+    })
+
+
+
+    //SingleEventDetails
+ app.get('/singleEventDetails/:id', async(req,res)=>{
+      let id = req.params.id;
+      let query = {_id : new ObjectId(id)};
+      let result =await eventCollection.findOne(query);
+      
+      res.send(result)
+    })
+
 
 
     // Send a ping to confirm a successful connection

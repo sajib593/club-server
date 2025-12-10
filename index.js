@@ -41,6 +41,7 @@ async function run() {
     let clubsCollection = db.collection('clubs')
     let memberShipCollection = db.collection('memberShip')
     let paymentCollection = db.collection('payment')
+    let eventCollection = db.collection('events')
 
     // users related api -------------------------- 
 
@@ -344,6 +345,18 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
         let cursor =  clubsCollection.find(query);
         let result = await cursor.toArray();
         res.send(result)
+    })
+
+
+    app.post('/createEvents', async(req, res)=>{
+      let eventData = req.body;
+      if (eventData.clubId) {
+          eventData.clubId = new ObjectId(eventData.clubId);
+  }
+      eventData.createdAt = new Date();
+      let result = await eventCollection.insertOne(eventData);
+      res.send(result)
+
     })
 
 

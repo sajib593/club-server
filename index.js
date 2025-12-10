@@ -63,6 +63,15 @@ async function run() {
     })
 
 
+    // UseRole +++++++++++++++++
+    app.get('/users/:email/role', async(req,res)=>{
+      let email = req.params.email;
+      let query = {email}
+      let user = await usersCollection.findOne(query);
+      res.send({role: user?.role || 'user'})
+    })
+
+
 
 
     // clubs related api ----------------------- 

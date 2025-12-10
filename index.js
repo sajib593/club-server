@@ -1,9 +1,10 @@
 const express = require('express')
 const cors = require('cors');
 require('dotenv').config();
-const app = express()
-const port = process.env.PORT || 3000
+const app = express();
+const port = process.env.PORT || 3000;
 
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // llrGAtLrl8ktqNFj 
 // middleware
@@ -39,6 +40,7 @@ async function run() {
     let usersCollection = db.collection('users')
     let clubsCollection = db.collection('clubs')
     let memberShipCollection = db.collection('memberShip')
+    let paymentCollection = db.collection('payment')
 
     // users related api -------------------------- 
 
@@ -99,7 +101,7 @@ async function run() {
     // clubDetails++++++++++++++++++++++
 app.post('/memberShip', async (req, res) => {
     try {
-        const { userEmail, userName, clubId, membershipFee, joinedAt, expireAt } = req.body;
+        const { userEmail, userName, clubId, membershipFee,clubName, joinedAt, expireAt } = req.body;
 
         // Find user
         const userData = await usersCollection.findOne({ email: userEmail });
@@ -110,7 +112,7 @@ app.post('/memberShip', async (req, res) => {
 
         const userId = userData._id;
 
-        // Check existing membership
+        //  existing membership
         const existingMembership = await memberShipCollection.findOne({
             userId: userId,
             clubId: clubId
@@ -124,15 +126,16 @@ app.post('/memberShip', async (req, res) => {
             });
         }
 
-        // Status logic
+        // Status 
         let status = membershipFee == 0 ? "active" : "pending_payment";
 
         let membershipData = {
             userId,
             userEmail,
             userName,
-            clubId,
+            clubId:new ObjectId(clubId),
             membershipFee,
+            clubName,
             joinedAt,
             expireAt,
             status
@@ -211,6 +214,137 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
             res.send(result);
         })
+
+
+
+
+
+
+        // payment related apis----------------------
+        
+        // clubDetails jsx to payment jsx+++++++++++++++++ 
+        app.get('/payment/:membershipId', async(req,res)=>{
+          let membershipId = req.params.membershipId;
+          let query = {_id : new ObjectId(membershipId)}
+          let result = await memberShipCollection.findOne(query)
+          res.send(result)
+        })
+
+        // Payment +++++++++++++++++++  
+      app.post('/payment-checkout-session', async(req, res)=>{
+      const { membershipId, membershipFee, userEmail,clubName } = req.body;
+
+      let amount = Number(membershipFee) * 100;
+
+       const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        
+        price_data: {
+          currency: 'USD',
+          unit_amount: amount,
+          product_data:{
+            name: clubName,
+          }
+        },
+        
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    metadata:{
+      membershipId: membershipId,
+      clubName: clubName
+    },
+    customer_email: userEmail,
+    success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-canceled`,
+  });
+     console.log(session);
+     res.send({url: session.url});
+
+    })
+
+
+
+    // paymentSuccess+++++++++++ 
+
+    app.patch('/payment-success', async(req,res)=>{
+
+      let sessionId = req.query.session_id;
+      // console.log('session id ', sessionId);
+
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      console.log('session retrive', session);
+
+      let transactionId = session.payment_intent;
+      let query = {transactionId: transactionId};
+
+      let paymentExist = await paymentCollection.findOne(query);
+
+      if(paymentExist){
+        return res.send({
+          message: 'already exist', 
+          transactionId,
+          })
+      }
+
+      
+
+      if(session.payment_status === 'paid'){
+        let id = session.metadata.membershipId;
+        let query = {_id: new ObjectId(id)};
+        let update ={
+          $set: {
+              status: 'active',
+              
+          }
+        }
+
+        let result = await memberShipCollection.updateOne(query, update);
+
+        let payment = {
+          amount: session.amount_total / 100,
+          currency: session.currency,
+          userEmail: session.userEmail,
+          membershipId: session.metadata.membershipId,
+          clubName: session.metadata.clubName,
+          transactionId: session.payment_intent,
+          paymentStatus: session.payment_status,
+          paidAt: new Date(),
+          
+        }
+
+        if (session.payment_status === 'paid' ){
+            let resultPayment = await paymentCollection.insertOne(payment); 
+            res.send({success: true, 
+              
+               transactionId: session.payment_intent,
+              
+              payment: resultPayment});
+        }
+
+        
+      }
+      
+      res.send({success: false});
+
+    })
+
+
+
+
+
+    // club member related api ------------------------------
+
+    // SelfClubs++++++++++++++++++++++++ 
+      app.get('/selfClubs', async(req, res)=>{
+        let email = req.query.email
+        let query = {managerEmail : email} 
+        let cursor =  clubsCollection.find(query);
+        let result = await cursor.toArray();
+        res.send(result)
+    })
 
 
 

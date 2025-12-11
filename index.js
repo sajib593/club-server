@@ -74,6 +74,70 @@ async function run() {
 
 
 
+    // manager related api --------------------------- 
+
+    // SelfClubMembers +++++++++++++++++++++++++ 
+    app.get("/manager/:email/members", async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        
+        const clubs = await clubsCollection.find({ managerEmail: email }).toArray();
+
+        if (!clubs.length) {
+            return res.send({
+                message: "No clubs found for this manager",
+                clubs: [],
+                members: []
+            });
+        }
+
+        const clubIds = clubs.map(club => club._id); // ObjectId array
+
+       
+        const memberships = await memberShipCollection.find({
+            clubId: { $in: clubIds }
+        }).toArray();
+
+        if (!memberships.length) {
+            return res.send({
+                message: "No members found",
+                clubs,
+                members: []
+            });
+        }
+
+        const userIds = memberships.map(m => m.userId);
+
+        
+        const users = await usersCollection.find({
+            _id: { $in: userIds }
+        }).toArray();
+
+        // 4️⃣ Merge user + membership
+        const membersWithDetails = memberships.map(m => {
+            const user = users.find(u => u._id.toString() === m.userId.toString());
+            return {
+                ...m,
+                user
+            };
+        });
+
+        res.send({
+            clubs,
+            totalMembers: membersWithDetails.length,
+            members: membersWithDetails
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Server Error", error });
+    }
+});
+
+
+
+
 
     // clubs related api ----------------------- 
 

@@ -131,11 +131,13 @@ app.post('/memberShip', async (req, res) => {
         }
 
         const userId = userData._id;
+        // console.log(userId);
+        // console.log(clubId);
 
         //  existing membership
         const existingMembership = await memberShipCollection.findOne({
             userId: userId,
-            clubId: clubId
+            clubId: new ObjectId(clubId)
         });
 
         if (existingMembership) {
@@ -187,7 +189,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
     const membership = await memberShipCollection.findOne({
         userId: user._id,
-        clubId
+        clubId: new ObjectId(clubId)
     });
 
     res.send(membership);

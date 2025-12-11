@@ -42,6 +42,7 @@ async function run() {
     let memberShipCollection = db.collection('memberShip')
     let paymentCollection = db.collection('payment')
     let eventCollection = db.collection('events')
+    let eventRegisterCollection = db.collection('registerEvent')
 
     // users related api -------------------------- 
 
@@ -378,6 +379,8 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
     })
 
 
+    // event related api ------------------------------------
+
     // ShowAllEvents+++++++++++++++ 
     app.get('/showAllEvents', async(req,res)=>{
       let limit = parseInt(req.query.limit);
@@ -402,6 +405,37 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
       
       res.send(result)
     })
+
+
+
+
+
+    // registeres events related apis -----------------------
+    // SingleEventDetails+++++ to save mongodb +++++++ 
+    app.post('/eventRegister', async(req, res)=>{
+
+      let eventRegisterData = req.body;
+      const { userEmail, eventId } = eventRegisterData;
+      eventRegisterData.status = "registered";
+      eventRegisterData.registeredAt = new Date();
+
+      const existingRegister = await eventRegisterCollection.findOne({
+            userEmail: userEmail,
+            eventId: eventId
+        });
+
+        if (existingRegister) {
+            return res.send({
+                message: "Already registered",
+                status: existingRegister.status,
+                // membership: existingMembership
+            });
+        }
+
+      let result = await eventRegisterCollection.insertOne(eventRegisterData);
+      res.send(result)
+    })
+
 
 
 

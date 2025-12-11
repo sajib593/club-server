@@ -89,11 +89,20 @@ async function run() {
 
     // ClubCards++++++++++++++++ 
     app.get('/allClubs', async(req, res)=>{
+      let limit = parseInt(req.query.limit);
       let query = {status: "approved"} 
-      let cursor =  clubsCollection.find(query);
+      let cursor =  clubsCollection.find(query).sort({createdAt: -1});
+
+      if(limit){
+        cursor = cursor.limit(limit);
+      }
+
       let result = await cursor.toArray();
       res.send(result)
     })
+
+  
+
 
     // clubDetails++++++++++++++++++++++ 
     app.get('/allClubs/:id', async(req, res)=>{
@@ -371,8 +380,14 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
     // ShowAllEvents+++++++++++++++ 
     app.get('/showAllEvents', async(req,res)=>{
+      let limit = parseInt(req.query.limit);
       let query = {};
-      let cursor = eventCollection.find(query);
+      let cursor = eventCollection.find(query).sort({eventDate: 1});
+
+      if(limit){
+        cursor = cursor.limit(limit);
+      }
+
       let result = await cursor.toArray();
       res.send(result)
     })

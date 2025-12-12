@@ -474,6 +474,102 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
 
 
+    // Get Events for Manager ------------ 
+    // SelfEventList++++++++++++++++++++ 
+    app.get('/manager/events/:email', async (req, res) => {
+    try {
+        const email = req.params.email;
+
+        const clubs = await clubsCollection.find({ managerEmail: email }).toArray();
+        const clubIds = clubs.map(c => new ObjectId(c._id));
+
+        const events = await eventCollection.find({
+            clubId: { $in: clubIds }
+        }).toArray();
+
+        res.send(events);
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false });
+    }
+});
+
+
+app.delete('/event/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const result = await eventCollection.deleteOne({
+            _id: new ObjectId(id)
+        });
+
+        res.send({ success: true, result });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ success: false });
+    }
+});
+
+
+
+
+// manager self events Update --------------------------- 
+// SelfEventList++++++++++++++++++   UpdateEventModal+++++ 
+app.patch('/event/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        // Only accept these fields for update
+        const allowedFields = [
+            "title",
+            "description",
+            "eventDate",
+            "location",
+            "isPaid",
+            "eventFee",
+            "maxAttendees"
+        ];
+
+        const updateData = {};
+
+        // Only copy allowed fields
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updateData[field] = req.body[field];
+            }
+        }
+
+        // Convert isPaid string -> boolean
+        if (updateData.isPaid === "true") updateData.isPaid = true;
+        if (updateData.isPaid === "false") updateData.isPaid = false;
+
+        // Convert numbers
+        if (updateData.eventFee !== undefined)
+            updateData.eventFee = Number(updateData.eventFee);
+
+        if (updateData.maxAttendees !== undefined)
+            updateData.maxAttendees = Number(updateData.maxAttendees);
+
+        const result = await eventCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );
+
+        res.send({ success: true, result });
+
+    } catch (error) {
+        console.log("UPDATE ERROR:", error);
+        res.status(500).send({ success: false, message: error.message });
+    }
+});
+
+
+
+
+
+
 
 
     // registeres events related apis -----------------------

@@ -286,6 +286,15 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
 
 
+// admin related API ----------------------------- 
+
+app.get('/allAdminUsers', async(req,res)=>{
+  let query = {};
+  let cursor = usersCollection.find(query);
+  let result = await cursor.toArray();
+  res.send(result)
+})
+
 
 
     // AllAdminClubs++++++++++++++++ 
@@ -395,6 +404,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
       if(paymentExist){
         return res.send({
+          success: true,
           message: 'already exist', 
           transactionId,
           })
@@ -428,7 +438,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
         if (session.payment_status === 'paid' ){
             let resultPayment = await paymentCollection.insertOne(payment); 
-            res.send({success: true, 
+            return res.send({success: true, 
               
                transactionId: session.payment_intent,
               

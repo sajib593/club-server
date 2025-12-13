@@ -178,6 +178,31 @@ async function run() {
     })
 
 
+    // update clubs ----------------------------
+    // UPDATE club
+app.patch('/clubs/:id', async (req, res) => {
+  const id = req.params.id;
+  const updatedData = req.body;
+
+  const query = { _id: new ObjectId(id) };
+
+  const updateDoc = {
+    $set: {
+      clubName: updatedData.clubName,
+      description: updatedData.description,
+      category: updatedData.category,
+      location: updatedData.location,
+      bannerImage: updatedData.bannerImage,
+      membershipFee: updatedData.membershipFee,
+      updatedAt: new Date()
+    }
+  };
+
+  const result = await clubsCollection.updateOne(query, updateDoc);
+  res.send(result);
+});
+
+
 
 
     // membership related api-------------------------- 

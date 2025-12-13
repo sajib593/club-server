@@ -650,6 +650,73 @@ app.patch('/event/:id', async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+    // users related api --------------- Total Clubs Joined (ACTIVE)
+   app.get('/dashboard/user/clubs/:email', async (req, res) => {
+  const email = req.params.email;
+
+  const totalClubs = await memberShipCollection.countDocuments({
+    userEmail: email,
+    status: "active",
+  });
+
+  res.send({ totalClubs });
+});
+
+
+
+// Total Events Registered (from paymentCollection)  -----
+app.get('/user/events/:email', async (req, res) => {
+  const email = req.params.email;
+
+  const totalEvents = await eventRegisterCollection.countDocuments({
+    userEmail: email,
+    status: "registered",
+  });
+
+  res.send({ totalEvents });
+});
+
+
+
+// Upcoming Events (from user’s active clubs) --------- 
+app.get('/dashboard/user/upcoming-events/:userId', async (req, res) => {
+  const userId = req.params.userId;
+  const today = new Date().toISOString().split("T")[0];
+
+  // 🔹 Active memberships
+  const memberships = await memberShipCollection
+    .find({ userId, status: "active" })
+    .project({ clubId: 1 })
+    .toArray();
+
+  const clubIds = memberships.map(m => m.clubId);
+
+  // 🔹 Events from those clubs
+  const events = await eventCollection.find({
+    clubId: { $in: clubIds },
+    eventDate: { $gte: today },
+  })
+  .sort({ eventDate: 1 })
+  .toArray();
+
+  res.send(events);
+});
+
+
+
+
+
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");

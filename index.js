@@ -178,6 +178,8 @@ async function run() {
     })
 
 
+
+
     // update clubs ----------------------------
     // UPDATE club
 app.patch('/clubs/:id', async (req, res) => {
@@ -337,6 +339,18 @@ app.get('/allAdminUsers', async(req,res)=>{
 
 
 
+        // all admin payment -------------------------- 
+        app.get('/allAdminPayments', async(req,res)=>{
+
+          let query = {};
+          let cursor = paymentCollection.find(query).sort({paidAt: -1});
+          let result = await cursor.toArray();
+          res.send(result)
+
+        })
+
+
+
 
 
 
@@ -392,10 +406,10 @@ app.get('/allAdminUsers', async(req,res)=>{
     app.patch('/payment-success', async(req,res)=>{
 
       let sessionId = req.query.session_id;
-      // console.log('session id ', sessionId);
+      console.log('session id ', sessionId);
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
-      console.log('session retrive', session);
+      // console.log('session retrive', session);
 
       let transactionId = session.payment_intent;
       let query = {transactionId: transactionId};
@@ -427,7 +441,7 @@ app.get('/allAdminUsers', async(req,res)=>{
         let payment = {
           amount: session.amount_total / 100,
           currency: session.currency,
-          userEmail: session.userEmail,
+          userEmail: session.customer_email,
           membershipId: session.metadata.membershipId,
           clubName: session.metadata.clubName,
           transactionId: session.payment_intent,

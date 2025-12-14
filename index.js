@@ -659,6 +659,7 @@ app.patch('/event/:id', async (req, res) => {
 
 
     // users related api --------------- Total Clubs Joined (ACTIVE)
+    // MemberOverview+++++++++++++++++++++ 
    app.get('/dashboard/user/clubs/:email', async (req, res) => {
   const email = req.params.email;
 
@@ -673,6 +674,7 @@ app.patch('/event/:id', async (req, res) => {
 
 
 // Total Events Registered (from paymentCollection)  -----
+// MemberOverview+++++++++++++++++++++++ 
 app.get('/user/events/:email', async (req, res) => {
   const email = req.params.email;
 
@@ -687,6 +689,7 @@ app.get('/user/events/:email', async (req, res) => {
 
 
 // Upcoming Events (from user’s active clubs) --------- 
+// MemberOverview++++++++++++++++++++ 
 app.get('/dashboard/user/upcoming-events/:userId', async (req, res) => {
   const userId = req.params.userId;
   const today = new Date().toISOString().split("T")[0];
@@ -709,6 +712,40 @@ app.get('/dashboard/user/upcoming-events/:userId', async (req, res) => {
 
   res.send(events);
 });
+
+
+
+
+
+
+
+// users related api ----------------------- 
+// UserActiveClubs+++++++++++++++++++++ 
+   app.get('/userClubs', async(req, res)=>{
+        let email = req.query.email
+        let query = {userEmail : email, status: "active"} 
+        let cursor =  memberShipCollection.find(query);
+        let result = await cursor.toArray();
+        res.send(result)
+    })
+
+// UsersEvents+++++++++++++++++++++ 
+   app.get('/userRegisteredEvents', async(req, res)=>{
+        let email = req.query.email
+        let query = {userEmail : email} 
+        let cursor =  eventRegisterCollection.find(query);
+        let result = await cursor.toArray();
+        res.send(result)
+    })
+
+    // UserPaymentHistory+++++++++++++++++++++ 
+   app.get('/userPaymentHistory', async(req, res)=>{
+        let email = req.query.email
+        let query = {userEmail : email} 
+        let cursor =  paymentCollection.find(query);
+        let result = await cursor.toArray();
+        res.send(result)
+    })
 
 
 

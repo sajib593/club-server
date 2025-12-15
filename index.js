@@ -4,12 +4,47 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+let admin = require("firebase-admin");
+// console.log(admin);
+
+let serviceAccount = require("./club-d8411-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // llrGAtLrl8ktqNFj 
 // middleware
 app.use(express.json());
 app.use(cors());
+
+
+let verifyFBToken = async(req, res, next)=>{
+//  console.log('header in middleware', req.headers.authorization);
+ let token = req.headers.authorization;
+
+ if(!token){
+  return res.status(401).send({message: 'unauthorized access'})
+ }
+
+ try{
+  let idToken = token.split(' ')[1];
+  let decoded =await admin.auth().verifyIdToken(idToken);
+  console.log('decoded token', decoded);
+  req.decoded_email = decoded.email;
+  
+  next(); 
+
+ }
+ catch(err){
+  return res.status(401).send({message: 'unauthorized access'})
+ }
+
+}
+
 
 app.get('/', (req, res) => {
   res.send('Hello club!')
@@ -290,7 +325,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
 // admin related API ----------------------------- 
 
-app.get('/allAdminUsers', async(req,res)=>{
+app.get('/allAdminUsers', verifyFBToken, async(req,res)=>{
   let query = {};
   let cursor = usersCollection.find(query);
   let result = await cursor.toArray();

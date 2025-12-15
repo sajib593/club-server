@@ -325,7 +325,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
 // admin related API ----------------------------- 
 
-app.get('/allAdminUsers', verifyFBToken, async(req,res)=>{
+app.get('/allAdminUsers', async(req,res)=>{
   let query = {};
   let cursor = usersCollection.find(query);
   let result = await cursor.toArray();
@@ -341,6 +341,21 @@ app.get('/allAdminUsers', verifyFBToken, async(req,res)=>{
       let result = await cursor.toArray();
       res.send(result)
     })
+
+
+    // delete club ------------------------------
+    // AllAdminClubs++++++++++++++++ 
+    app.delete('/allAdminClubs/:id', async (req, res) => {
+  const clubId = req.params.id;
+
+  if (!clubId) return res.status(400).send({ message: "ClubId required" });
+
+  const query = { _id: new ObjectId(clubId) };
+  const result = await clubsCollection.deleteOne(query);
+
+  res.send(result); // { deletedCount: 1 } if successful
+});
+
 
 
 
@@ -384,6 +399,29 @@ app.get('/allAdminUsers', verifyFBToken, async(req,res)=>{
 
         })
 
+
+
+        //change user role ============================
+        // AllAdminUsers++++++++++++++++++++ 
+        app.patch('/changeUserRole', (req, res)=>{
+
+          let {userId, role} = req.body;
+
+          if (!userId || !role) {
+      return res.status(400).send({ message: "userId and role required" });
+    };
+
+    let query = {_id: new ObjectId(userId)};
+    let update = {
+      $set: {
+        role: role
+      }
+    };
+
+    let result = usersCollection.updateOne(query, update);
+    res.send(result);
+
+        })
 
 
 

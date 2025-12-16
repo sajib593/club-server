@@ -79,6 +79,34 @@ async function run() {
     let eventCollection = db.collection('events')
     let eventRegisterCollection = db.collection('registerEvent')
 
+
+    let verifyAdmin = async(req,res, next)=>{
+      let email = req.decoded_email;
+      let query = {email : email};
+      let user = await usersCollection.findOne(query);
+
+      if(!user || user.role !== "admin"){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+
+      next();
+
+    }
+
+    let verifyManager = async(req,res, next)=>{
+      let email = req.decoded_email;
+      let query = {email : email};
+      let user = await usersCollection.findOne(query);
+
+      if(!user || user.role !== "clubManager"){
+        return res.status(403).send({message: 'forbidden access'})
+      }
+
+      next();
+
+    }
+
+
     // users related api -------------------------- 
 
     // register++++++++++++++
@@ -112,7 +140,7 @@ async function run() {
     // manager related api --------------------------- 
 
     // SelfClubMembers +++++++++++++++++++++++++ 
-    app.get("/manager/:email/members", async (req, res) => {
+    app.get("/manager/:email/members", verifyFBToken, verifyManager, async (req, res) => {
     try {
         const { email } = req.params;
 
@@ -325,7 +353,7 @@ app.get("/memberShip/user/:email/club/:clubId", async (req, res) => {
 
 // admin related API ----------------------------- 
 
-app.get('/allAdminUsers', async(req,res)=>{
+app.get('/allAdminUsers', verifyFBToken, verifyAdmin, async(req,res)=>{
   let query = {};
   let cursor = usersCollection.find(query);
   let result = await cursor.toArray();
@@ -335,7 +363,7 @@ app.get('/allAdminUsers', async(req,res)=>{
 
 
     // AllAdminClubs++++++++++++++++ 
-        app.get('/allAdminClubs', async(req, res)=>{
+        app.get('/allAdminClubs', verifyFBToken, verifyAdmin, async(req, res)=>{
       let query = {} 
       let cursor =  clubsCollection.find(query);
       let result = await cursor.toArray();
@@ -345,7 +373,7 @@ app.get('/allAdminUsers', async(req,res)=>{
 
     // delete club ------------------------------
     // AllAdminClubs++++++++++++++++ 
-    app.delete('/allAdminClubs/:id', async (req, res) => {
+    app.delete('/allAdminClubs/:id', verifyFBToken, verifyAdmin, async (req, res) => {
   const clubId = req.params.id;
 
   if (!clubId) return res.status(400).send({ message: "ClubId required" });
@@ -360,7 +388,7 @@ app.get('/allAdminUsers', async(req,res)=>{
 
 
     // AllAdminClubs++++++++++++++++ 
-     app.patch('/allAdminClubs/:id', async (req, res) => {
+     app.patch('/allAdminClubs/:id', verifyFBToken, verifyAdmin, async (req, res) => {
             const status = req.body.status;
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
@@ -390,7 +418,8 @@ app.get('/allAdminUsers', async(req,res)=>{
 
 
         // all admin payment -------------------------- 
-        app.get('/allAdminPayments', async(req,res)=>{
+        // AllAdminPayments +++++++++++++++++++ 
+        app.get('/allAdminPayments', verifyFBToken, verifyAdmin, async(req,res)=>{
 
           let query = {};
           let cursor = paymentCollection.find(query).sort({paidAt: -1});
@@ -403,7 +432,7 @@ app.get('/allAdminUsers', async(req,res)=>{
 
         //change user role ============================
         // AllAdminUsers++++++++++++++++++++ 
-        app.patch('/changeUserRole', (req, res)=>{
+        app.patch('/changeUserRole', verifyFBToken, verifyAdmin, async(req, res)=>{
 
           let {userId, role} = req.body;
 
@@ -418,7 +447,7 @@ app.get('/allAdminUsers', async(req,res)=>{
       }
     };
 
-    let result = usersCollection.updateOne(query, update);
+    let result =await usersCollection.updateOne(query, update);
     res.send(result);
 
         })
@@ -546,7 +575,7 @@ app.get('/allAdminUsers', async(req,res)=>{
     // club member related api ------------------------------
 
     // SelfClubs++++++++++++++++++++++++ 
-      app.get('/selfClubs', async(req, res)=>{
+      app.get('/selfClubs', verifyFBToken, verifyManager, async(req, res)=>{
         let email = req.query.email
         let query = {managerEmail : email} 
         let cursor =  clubsCollection.find(query);
@@ -555,7 +584,7 @@ app.get('/allAdminUsers', async(req,res)=>{
     })
 
 
-    app.post('/createEvents', async(req, res)=>{
+    app.post('/createEvents', verifyFBToken, verifyManager, async(req, res)=>{
       let eventData = req.body;
       if (eventData.clubId) {
           eventData.clubId = new ObjectId(eventData.clubId);
@@ -598,7 +627,7 @@ app.get('/allAdminUsers', async(req,res)=>{
 
     // Get Events for Manager ------------ 
     // SelfEventList++++++++++++++++++++ 
-    app.get('/manager/events/:email', async (req, res) => {
+    app.get('/manager/events/:email', verifyFBToken, verifyManager, async (req, res) => {
     try {
         const email = req.params.email;
 

@@ -218,7 +218,12 @@ async function run() {
     // ClubCards++++++++++++++++ 
     app.get('/allClubs', async(req, res)=>{
       let limit = parseInt(req.query.limit);
-      let query = {status: "approved"} 
+      let search = req.query.search || "";
+      let query = {
+        status: "approved",
+        clubName: { $regex: search, $options: "i" }
+      } ;
+
       let cursor =  clubsCollection.find(query).sort({createdAt: -1});
 
       if(limit){
@@ -601,8 +606,27 @@ app.get('/allAdminUsers', verifyFBToken, verifyAdmin, async(req,res)=>{
     // ShowAllEvents+++++++++++++++ 
     app.get('/showAllEvents', async(req,res)=>{
       let limit = parseInt(req.query.limit);
-      let query = {};
-      let cursor = eventCollection.find(query).sort({eventDate: 1});
+      let search = req.query.search || "";
+      let sort = req.query.sort || "";
+      let query = {
+        title: { $regex: search, $options: "i"}
+      };
+
+      // sorting----- 
+      let sortOption = {};
+      if(sort === "asc"){
+        sortOption = {eventFee: 1}
+      }
+        else if(sort === "desc"){
+          sortOption = {eventFee: -1};
+        }
+        else {
+      sortOption = { eventDate: 1 };
+    }
+
+
+
+      let cursor = eventCollection.find(query).sort(sortOption);
 
       if(limit){
         cursor = cursor.limit(limit);

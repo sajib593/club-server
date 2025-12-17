@@ -135,6 +135,35 @@ async function run() {
       res.send({role: user?.role || 'user'})
     })
 
+    // myProfile-------------------- 
+    // Profile +++++++++++++++++
+    app.get('/myProfile/:email', async(req,res)=>{
+      let email = req.params.email;
+      let query = {email}
+      let result = await usersCollection.findOne(query);
+      res.send(result)
+    })
+
+    // update user profile ---------------------
+    // Profile +++++++++++++++++
+    app.patch('/myProfile/:email', verifyFBToken, async (req, res) => {
+  const email = req.params.email;
+  const { displayName, photoURL } = req.body;
+
+  const result = await usersCollection.updateOne(
+    { email },
+    {
+      $set: {
+        displayName,
+        photoURL,
+      },
+    }
+  );
+
+  res.send(result);
+});
+
+
 
 
     // manager related api --------------------------- 

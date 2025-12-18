@@ -7,7 +7,14 @@ const port = process.env.PORT || 3000;
 let admin = require("firebase-admin");
 // console.log(admin);
 
-let serviceAccount = require("./club-d8411-firebase-adminsdk.json");
+// let serviceAccount = require("./club-d8411-firebase-adminsdk.json");
+
+
+
+
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const serviceAccount = JSON.parse(decoded);
+
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -33,7 +40,7 @@ let verifyFBToken = async(req, res, next)=>{
  try{
   let idToken = token.split(' ')[1];
   let decoded =await admin.auth().verifyIdToken(idToken);
-  console.log('decoded token', decoded);
+  // console.log('decoded token', decoded);
   req.decoded_email = decoded.email;
   
   next(); 
@@ -68,7 +75,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
 
     let db = client.db('club')
@@ -360,7 +367,7 @@ app.post('/memberShip', async (req, res) => {
         })
 
     } catch (err) {
-        console.log(err);
+        // console.log(err);
         res.status(500).send({ error: "Server error" });
     }
 });
@@ -530,7 +537,7 @@ app.get('/allAdminUsers', verifyFBToken, verifyAdmin, async(req,res)=>{
     success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-canceled`,
   });
-     console.log(session);
+    //  console.log(session);
      res.send({url: session.url});
 
     })
@@ -542,7 +549,7 @@ app.get('/allAdminUsers', verifyFBToken, verifyAdmin, async(req,res)=>{
     app.patch('/payment-success', async(req,res)=>{
 
       let sessionId = req.query.session_id;
-      console.log('session id ', sessionId);
+      // console.log('session id ', sessionId);
 
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       // console.log('session retrive', session);
@@ -694,7 +701,7 @@ app.get('/allAdminUsers', verifyFBToken, verifyAdmin, async(req,res)=>{
         res.send(events);
 
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send({ success: false });
     }
 });
@@ -711,7 +718,7 @@ app.delete('/event/:id', async (req, res) => {
         res.send({ success: true, result });
 
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(500).send({ success: false });
     }
 });
@@ -764,7 +771,7 @@ app.patch('/event/:id', async (req, res) => {
         res.send({ success: true, result });
 
     } catch (error) {
-        console.log("UPDATE ERROR:", error);
+        // console.log("UPDATE ERROR:", error);
         res.status(500).send({ success: false, message: error.message });
     }
 });
@@ -910,8 +917,8 @@ app.get('/dashboard/user/upcoming-events/:userId', async (req, res) => {
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
